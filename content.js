@@ -2,6 +2,7 @@
 
 const ACCENT = '#D946EF';
 const CHINESE_CODES = ['zh', 'zh-cn', 'zh-tw', 'zh-hans', 'zh-hant'];
+const KOREAN_CODES  = ['ko', 'ko-kr'];
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -23,12 +24,13 @@ let containerObserver = null;
 let lastSourceText = '';
 let subtitleDebounceTimer = null;
 
-// Manifest / TTML pre-fetch state
-let manifestTracks = [];
+// TTML pre-fetch state
 let activeLang = 'auto';   // BCP-47 source language, or 'auto'
-let ttmlCues = null;       // [{begin, end, text}] from pre-fetched subtitle file
+let ttmlCues = null;       // [{begin, end, text}] source-language cues
 let rafId = null;
 let lastRafTs = 0;
+let staleCueCount = 0;
+let cuesByLang = new Map(); // all fetched subtitle cues, keyed by BCP-47 code
 let preloadTimer = null;
 let videoEl = null;
 
@@ -62,8 +64,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
   } else {
     showNative(false);
     if (settings.targetLang !== prevTarget || settings.translationProvider !== prevProvider) {
+      targetEl.textContent = '';
+      pinyinTgtEl.style.display = 'none';
       if (lastSourceText) translateAndShow(lastSourceText);
-      if (ttmlCues) schedulePreload(); // re-warm cache for new target
+      if (ttmlCues) schedulePreload();
     }
   }
 });
@@ -161,7 +165,7 @@ function injectStyles() {
       align-items: center;
       background: rgba(var(--dualy-bg-rgb), var(--dualy-bg-alpha, 0.4));
       border-radius: 4px;
-      border-bottom: var(--dualy-accent-line, 2px solid ${ACCENT});
+      border-top: var(--dualy-accent-line, 2px solid ${ACCENT});
     }
     #dualy-target {
       font-family: 'Netflix Sans', Arial, sans-serif;
@@ -200,6 +204,8 @@ function applySettingsToOverlay() {
 
 function clearOverlay() {
   if (overlay) overlay.style.display = 'none';
+  if (sourceEl) sourceEl.textContent = '';
+  if (targetEl) targetEl.textContent = '';
   if (pinyinSrcEl) pinyinSrcEl.style.display = 'none';
   if (pinyinTgtEl) pinyinTgtEl.style.display = 'none';
   lastSourceText = '';
@@ -246,6 +252,8 @@ function attachSubtitleObserver(container) {
       stopRafLoop();
       ttmlCues = null;
       activeLang = 'auto';
+      staleCueCount = 0;
+      cuesByLang = new Map();
       clearOverlay();
       document.documentElement.classList.remove('dualy-active');
       removeWatcher.disconnect();
@@ -282,6 +290,9 @@ function onSubtitleText(text) {
 
   if (settings.showPinyin && isChinese(text) && typeof pinyinPro !== 'undefined') {
     pinyinSrcEl.textContent = pinyinPro.pinyin(text, { toneType: 'symbol', type: 'string', nonZh: 'consecutive' });
+    pinyinSrcEl.style.display = 'block';
+  } else if (settings.showPinyin && isKorean(text) && typeof hangulRomanization !== 'undefined') {
+    pinyinSrcEl.textContent = hangulRomanization.convert(text);
     pinyinSrcEl.style.display = 'block';
   } else {
     pinyinSrcEl.style.display = 'none';
@@ -372,6 +383,20 @@ function hasAriaHiddenAncestor(el, boundary) {
 
 // ── Translation ───────────────────────────────────────────────────────────────
 
+function showTargetText(text) {
+  const tl = settings.targetLang;
+  targetEl.textContent = text;
+  if (settings.showPinyin && isChineseLang(tl) && typeof pinyinPro !== 'undefined') {
+    pinyinTgtEl.textContent = pinyinPro.pinyin(text, { toneType: 'symbol', type: 'string', nonZh: 'consecutive' });
+    pinyinTgtEl.style.display = 'block';
+  } else if (settings.showPinyin && isKoreanLang(tl) && typeof hangulRomanization !== 'undefined') {
+    pinyinTgtEl.textContent = hangulRomanization.convert(text);
+    pinyinTgtEl.style.display = 'block';
+  } else {
+    pinyinTgtEl.style.display = 'none';
+  }
+}
+
 async function translateAndShow(text) {
   const tl = settings.targetLang;
 
@@ -384,20 +409,10 @@ async function translateAndShow(text) {
   });
 
   if (text !== lastSourceText) return;
-
   if (!resp?.fromCache) schedulePreload();
 
   const translated = resp?.text ?? resp;
-  if (translated) {
-    targetEl.textContent = translated;
-
-    if (settings.showPinyin && isChineseLang(tl) && typeof pinyinPro !== 'undefined') {
-      pinyinTgtEl.textContent = pinyinPro.pinyin(translated, { toneType: 'symbol', type: 'string', nonZh: 'consecutive' });
-      pinyinTgtEl.style.display = 'block';
-    } else {
-      pinyinTgtEl.style.display = 'none';
-    }
-  }
+  if (translated) showTargetText(translated);
 }
 
 // ── Native subtitle hiding ────────────────────────────────────────────────────
@@ -416,30 +431,27 @@ function isChineseLang(lang) {
   return CHINESE_CODES.some(c => (lang || '').toLowerCase().startsWith(c));
 }
 
-// ── Manifest / TTML pre-fetch ─────────────────────────────────────────────────
+function isKorean(text) {
+  return /\p{Script=Hangul}/u.test(text);
+}
 
-window.addEventListener('DUALY_MANIFEST', e => {
-  manifestTracks = e.detail.tracks || [];
-  ttmlCues = null;
-  activeLang = 'auto';
-  stopRafLoop();
+function isKoreanLang(lang) {
+  return KOREAN_CODES.some(c => (lang || '').toLowerCase().startsWith(c));
+}
 
-  // If there is exactly one subtitle (non-CC) track we know the source language.
-  const subTracks = manifestTracks.filter(t => t.type !== 'closedcaptions');
-  if (subTracks.length === 1) activeLang = subTracks[0].language || 'auto';
-});
+// ── TTML pre-fetch ────────────────────────────────────────────────────────────
 
 window.addEventListener('DUALY_SUBTITLE_FILE', e => {
   const { text, language, type } = e.detail;
   if (type === 'closedcaptions') return;
-  // Skip if we already know the active language and this file is a different one
-  if (activeLang !== 'auto' && language && activeLang !== language) return;
 
   const cues = text.trimStart().startsWith('WEBVTT') ? parseVTT(text) : parseTTML(text);
   if (!cues.length) return;
 
+  if (language) cuesByLang.set(language, cues);
   activeLang = language || activeLang;
   ttmlCues = cues;
+  staleCueCount = 0;
   schedulePreload();
   startRafLoop();
 });
@@ -458,17 +470,89 @@ function startRafLoop() {
       lastRafTs = ts;
       if (settings.enabled && ttmlCues) {
         const t = video.currentTime;
-        const active = ttmlCues.find(c => t >= c.begin && t < c.end);
-        const text = active ? active.text : '';
-        if (text !== lastSourceText) {
-          if (text) onSubtitleText(text);
-          else clearOverlay();
-        }
+        rafUpdateSource(t);
       }
     }
     rafId = requestAnimationFrame(tick);
   }
   rafId = requestAnimationFrame(tick);
+}
+
+function rafUpdateSource(t) {
+  let active = ttmlCues.find(c => t >= c.begin && t < c.end);
+  let text = active ? active.text : '';
+
+  // Detect when Netflix switches back to a cached subtitle language (no new XHR fires).
+  // If our TTML cue text and Netflix's DOM text are both non-empty but differ for
+  // several consecutive ticks, the cues are stale.
+  if (text) {
+    const container = getSubtitleContainer();
+    const domText = container ? extractText(container) : '';
+    if (domText && domText !== text) {
+      staleCueCount++;
+      if (staleCueCount < 5) return; // accumulate evidence, hold display
+
+      // Try to restore from our per-language cue cache
+      let cacheHit = false;
+      for (const [lang, cues] of cuesByLang) {
+        const hit = cues.find(c => t >= c.begin && t < c.end);
+        if (hit && hit.text === domText) {
+          activeLang = lang;
+          ttmlCues = cues;
+          staleCueCount = 0;
+          lastSourceText = '';
+          schedulePreload();
+          text = hit.text; // update text to restored cue
+          cacheHit = true;
+          break;
+        }
+      }
+      if (!cacheHit) {
+        ttmlCues = null;
+        activeLang = 'auto';
+        lastSourceText = '';
+        staleCueCount = 0;
+        stopRafLoop();
+        onSubtitleText(domText);
+        return;
+      }
+    } else {
+      staleCueCount = 0;
+    }
+  } else {
+    staleCueCount = 0;
+  }
+
+  if (text === lastSourceText) return;
+  lastSourceText = text;
+
+  if (!text) {
+    sourceEl.textContent = '';
+    pinyinSrcEl.style.display = 'none';
+    targetEl.textContent = '';
+    pinyinTgtEl.style.display = 'none';
+    maybeHideOverlay();
+    return;
+  }
+
+  sourceEl.textContent = text;
+  overlay.style.display = 'flex';
+
+  if (settings.showPinyin && isChinese(text) && typeof pinyinPro !== 'undefined') {
+    pinyinSrcEl.textContent = pinyinPro.pinyin(text, { toneType: 'symbol', type: 'string', nonZh: 'consecutive' });
+    pinyinSrcEl.style.display = 'block';
+  } else if (settings.showPinyin && isKorean(text) && typeof hangulRomanization !== 'undefined') {
+    pinyinSrcEl.textContent = hangulRomanization.convert(text);
+    pinyinSrcEl.style.display = 'block';
+  } else {
+    pinyinSrcEl.style.display = 'none';
+  }
+
+  translateAndShow(text);
+}
+
+function maybeHideOverlay() {
+  if (!sourceEl.textContent && !targetEl.textContent) overlay.style.display = 'none';
 }
 
 function stopRafLoop() {

@@ -28,7 +28,7 @@
     },
     {
       "matches": ["https://www.netflix.com/watch/*"],
-      "js": ["vendor/pinyin-pro.min.js", "content.js"],
+      "js": ["vendor/pinyin-pro.min.js", "vendor/hangul-romanization.js", "content.js"],
       "run_at": "document_idle"
     }
   ],

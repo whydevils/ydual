@@ -43,11 +43,11 @@ const DEFAULT_SETTINGS = {
 
 // Elements
 const $ = id => document.getElementById(id);
-const enabledEl    = $('enabled');
-const targetLangEl = $('targetLang');
-const providerEl   = $('translationProvider');
-const deeplKeyRow  = $('deeplKeyRow');
-const deeplKeyEl   = $('deeplApiKey');
+const enabledEl          = $('enabled');
+const targetLangEl       = $('targetLang');
+const providerEl         = $('translationProvider');
+const deeplKeyRow        = $('deeplKeyRow');
+const deeplKeyEl         = $('deeplApiKey');
 const bgThemeEl    = $('bgTheme');
 const showPinyinEl           = $('showPinyin');
 const useAccentColorEl    = $('useAccentColor');
@@ -60,8 +60,9 @@ const srcSizeVal   = $('srcSizeVal');
 const tgtSizeVal   = $('tgtSizeVal');
 const bgAlphaVal   = $('bgAlphaVal');
 const posVal       = $('posVal');
-const statusDot    = $('statusDot');
-const statusText   = $('statusText');
+const statusDot        = $('statusDot');
+const statusText       = $('statusText');
+const resetDisplayBtn  = $('resetDisplay');
 
 // Populate language dropdown
 function populateSelects() {
@@ -142,6 +143,22 @@ providerEl.addEventListener('change', () => updateDeepLKeyVisibility(providerEl.
 
 // Pinyin toggle: show/hide accent color row
 showPinyinEl.addEventListener('change', () => updatePinyinAccentVisibility(showPinyinEl.checked));
+
+const DISPLAY_DEFAULTS = {
+  sourceFontSize: DEFAULT_SETTINGS.sourceFontSize,
+  targetFontSize: DEFAULT_SETTINGS.targetFontSize,
+  verticalPos:    DEFAULT_SETTINGS.verticalPos,
+  bgTheme:        DEFAULT_SETTINGS.bgTheme,
+  bgAlpha:        DEFAULT_SETTINGS.bgAlpha,
+  useAccentColor: DEFAULT_SETTINGS.useAccentColor,
+};
+
+resetDisplayBtn.addEventListener('click', () => {
+  const s = { ...readFromUI(), ...DISPLAY_DEFAULTS };
+  applyToUI(s);
+  clearTimeout(saveTimer);
+  chrome.storage.sync.set(s);
+});
 
 // API key — stored in local storage (not synced across devices)
 let keyTimer = null;
