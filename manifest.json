@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Dualy - Dual Subtitles",
+  "version": "1.0.0",
+  "description": "Watch Netflix with subtitles in two languages at once.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "Dualy - Dual Subtitles"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.netflix.com/watch/*"],
+      "js": ["injector.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://www.netflix.com/watch/*"],
+      "js": ["vendor/pinyin-pro.min.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.netflix.com/*",
+    "https://translate.googleapis.com/*",
+    "https://api.deepl.com/*",
+    "https://api-free.deepl.com/*"
+  ]
+}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 288px;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 13px;
+      background: #18181b;
+      color: #e4e4e7;
+      padding: 16px;
+      user-select: none;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: #D946EF;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .logo span { color: #e4e4e7; font-weight: 400; }
+
+    /* Toggle switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toggle-label { color: #a1a1aa; font-size: 12px; }
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #3f3f46;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      height: 14px; width: 14px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .slider { background: #D946EF; }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid #27272a;
+      margin: 12px 0;
+    }
+
+    /* Rows */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .row:last-child { margin-bottom: 0; }
+
+    label.field-label {
+      color: #a1a1aa;
+      font-size: 12px;
+    }
+
+    /* Selects */
+    select {
+      background: #27272a;
+      color: #e4e4e7;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 20px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23a1a1aa' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      max-width: 148px;
+    }
+    select:focus { border-color: #D946EF; }
+
+    /* Sliders */
+    .range-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .range-group:last-child { margin-bottom: 0; }
+    .range-group label { color: #a1a1aa; font-size: 12px; }
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    input[type=range] {
+      flex: 1;
+      accent-color: #D946EF;
+      cursor: pointer;
+      height: 4px;
+    }
+    .range-val {
+      font-size: 11px;
+      color: #D946EF;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #71717a;
+      margin-top: 12px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #3f3f46;
+    }
+    .dot.active { background: #D946EF; }
+
+    /* API key input */
+    .key-input {
+      background: #27272a;
+      color: #e4e4e7;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      outline: none;
+      width: 148px;
+      font-family: inherit;
+    }
+    .key-input::placeholder { color: #52525b; }
+    .key-input:focus { border-color: #D946EF; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">Dual<span>y</span></div>
+    <div class="toggle-wrap">
+      <span class="toggle-label">Active</span>
+      <label class="toggle">
+        <input type="checkbox" id="enabled">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="row">
+    <label class="field-label" for="targetLang">Translate to</label>
+    <select id="targetLang"></select>
+  </div>
+  <div class="row">
+    <label class="field-label" for="translationProvider">Provider</label>
+    <select id="translationProvider">
+      <option value="google">Google</option>
+      <option value="deepl">DeepL</option>
+    </select>
+  </div>
+  <div class="row" id="deeplKeyRow" style="display:none">
+    <label class="field-label" for="deeplApiKey">DeepL API key</label>
+    <input type="password" id="deeplApiKey" class="key-input" placeholder="paste key…" autocomplete="off">
+  </div>
+  <div class="row">
+    <label class="field-label" for="showPinyin">Show phonetics if available</label>
+    <label class="toggle">
+      <input type="checkbox" id="showPinyin">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <hr>
+
+  <div class="range-group">
+    <label for="sourceFontSize">Source size</label>
+    <div class="range-row">
+      <input type="range" id="sourceFontSize" min="12" max="60" step="1">
+      <span class="range-val" id="srcSizeVal">18px</span>
+    </div>
+  </div>
+
+  <div class="range-group">
+    <label for="targetFontSize">Target size</label>
+    <div class="range-row">
+      <input type="range" id="targetFontSize" min="12" max="60" step="1">
+      <span class="range-val" id="tgtSizeVal">22px</span>
+    </div>
+  </div>
+
+  <div class="range-group">
+    <label for="verticalPos">Vertical position</label>
+    <div class="range-row">
+      <input type="range" id="verticalPos" min="0" max="100" step="1">
+      <span class="range-val" id="posVal">85%</span>
+    </div>
+  </div>
+  <div class="row" id="useAccentColorRow">
+    <label class="field-label" for="useAccentColor">Use accent color</label>
+    <label class="toggle">
+      <input type="checkbox" id="useAccentColor">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <hr>
+
+  <div class="row">
+    <label class="field-label" for="bgTheme">Background</label>
+    <select id="bgTheme">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+  </div>
+
+  <div class="range-group">
+    <label for="bgAlpha">Opacity</label>
+    <div class="range-row">
+      <input type="range" id="bgAlpha" min="0" max="100" step="1">
+      <span class="range-val" id="bgAlphaVal">40%</span>
+    </div>
+  </div>
+
+  <div class="status-badge">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">Open Netflix to start</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
