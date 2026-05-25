@@ -1,6 +1,7 @@
 // Dualy content script — dual subtitle overlay for Netflix
 
-const DEBUG = false;
+const DEBUG = true;
+const ts = () => new Date().toISOString().slice(11, 23);
 const ACCENT = '#D946EF';
 const CHINESE_CODES = ['zh', 'zh-cn', 'zh-tw', 'zh-hans', 'zh-hant'];
 const KOREAN_CODES  = ['ko', 'ko-kr'];
@@ -73,7 +74,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
       targetEl.textContent = '';
       pinyinTgtEl.style.display = 'none';
       if (lastSourceText) translateAndShow(lastSourceText);
-      if (ttmlCues) schedulePreload();
+      if (ttmlCues) {
+        ttmlCues.forEach(c => { c._preloaded = false; });
+        schedulePreload();
+      }
     }
   }
 });
@@ -425,7 +429,7 @@ async function translateAndShow(text) {
 
   if (!resp?.fromCache) {
     const prov = settings.translationProvider || 'google';
-    if (DEBUG) console.log(`[Dualy] JIT ${prov} ${resp?.ms ?? '?'}ms | in="${text}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
+    if (DEBUG) console.log(`[Dualy] ${ts()} JIT ${prov} ${resp?.ms ?? '?'}ms | in="${text}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
   }
 
   if (text !== lastSourceText) return;
@@ -631,13 +635,13 @@ function doPreload() {
     if (texts.length === 1) {
       chrome.runtime.sendMessage({ type: 'TRANSLATE', text: texts[0], sl, tl, provider, preload: true }, resp => {
         if (!resp?.fromCache)
-          if (DEBUG) console.log(`[Dualy] preload ${provider} ${resp?.ms ?? '?'}ms | in="${texts[0]}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
+          if (DEBUG) console.log(`[Dualy] ${ts()} preload ${provider} ${resp?.ms ?? '?'}ms | in="${texts[0]}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
       });
     } else {
       chrome.runtime.sendMessage({ type: 'TRANSLATE_BATCH', texts, contextTexts, sl, tl, provider }, resp => {
-        if (resp?.allCached) { if (DEBUG) console.log(`[Dualy] preload batch ${provider} all cached (${texts.length}/${texts.length})`); return; }
+        if (resp?.allCached) { if (DEBUG) console.log(`[Dualy] ${ts()} preload batch ${provider} all cached (${texts.length}/${texts.length})`); return; }
         const ok = resp?.results?.filter(Boolean).length ?? 0;
-        if (DEBUG) console.log(`[Dualy] preload batch ${provider} ${resp?.ms ?? '?'}ms | in=${JSON.stringify(texts)} | out=${resp?.results ? JSON.stringify(resp.results) : 'FAIL'} (${ok}/${texts.length} ok)`);
+        if (DEBUG) console.log(`[Dualy] ${ts()} preload batch ${provider} ${resp?.ms ?? '?'}ms | in=${JSON.stringify(texts)} | out=${resp?.results ? JSON.stringify(resp.results) : 'FAIL'} (${ok}/${texts.length} ok)`);
       });
     }
   }
