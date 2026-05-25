@@ -13,6 +13,7 @@ need it, check the pronunciation, and pick up vocabulary naturally in context.
 FEATURES
 
 • No delay — upcoming lines are pre-translated before they appear
+• Context-aware translation — lines are translated in scene-sized groups, so pronouns, names and tone stay consistent across sentences rather than each line being treated in isolation
 • Google Translate built in, no setup required
 • DeepL support for higher-quality translations (API key required)
 • Pinyin for Chinese · Romanisation for Korean

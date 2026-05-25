@@ -12,6 +12,7 @@ Watch streaming video with two subtitle tracks at once: the original language on
 - **24 target languages** — English, Spanish, French, German, Japanese, Korean, Chinese (Simplified & Traditional), Arabic, and more
 - **Fully customizable display** — adjust font sizes, vertical position, background color and opacity, and accent color
 - **Zero-delay translations** — upcoming subtitle lines are pre-translated in a lookahead window so the translation appears the instant the subtitle does
+- **Context-aware translation** — lines are batched and translated together in scene-sized groups rather than one at a time, so pronouns, names, and tone stay consistent across sentences; each batch also receives the preceding lines as context, preserving coherence across batch boundaries
 
 ## Installation
 
@@ -79,7 +80,7 @@ Netflix delivers subtitles as TTML or WebVTT files fetched by its player via XHR
 
 **Stale-cue detection** — if the rAF cue text and the Netflix DOM text are both non-empty but differ for five consecutive ticks, the extension tries to recover from its per-language cue cache (`cuesByLang`). If no cached language matches the DOM text, it falls back to DOM observer mode.
 
-**Pre-translation lookahead** — after each subtitle update, `doPreload` fires background translate requests for all cues in the next 90 seconds. The background script caches the results immediately, so when the rAF loop reaches those cues the translation is already available.
+**Pre-translation lookahead** — after each subtitle update, `doPreload` fires background translate requests for all cues in the next 120 seconds, refreshing every 60 seconds to slide the window forward. Rather than translating each cue individually, upcoming cues are grouped into batches of up to 1 000 source characters and sent as a single request, so the translation model sees multiple consecutive lines at once and can produce consistent pronouns, names, and register across the whole scene. Each batch is also prefixed with up to four cues from the 30 seconds immediately before it, so coherence is maintained across batch boundaries. The background script caches each cue's translation individually, so when the rAF loop reaches a cue the result is already available.
 
 **Phonetics** — Chinese text (detected via the Unicode `Han` script property) is run through `pinyin-pro`; Korean text (via the `Hangul` script property) is run through `hangul-romanization`. Both are applied to the source and, when applicable, the target line.
 
