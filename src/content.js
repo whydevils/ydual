@@ -1,5 +1,6 @@
 // Dualy content script — dual subtitle overlay for Netflix
 
+const DEBUG = false;
 const ACCENT = '#D946EF';
 const CHINESE_CODES = ['zh', 'zh-cn', 'zh-tw', 'zh-hans', 'zh-hant'];
 const KOREAN_CODES  = ['ko', 'ko-kr'];
@@ -33,6 +34,11 @@ let staleCueCount = 0;
 let cuesByLang = new Map(); // all fetched subtitle cues, keyed by BCP-47 code
 let preloadTimer = null;
 let videoEl = null;
+
+// Rolling context buffer for translation quality
+let recentCueTexts = [];
+const MAX_CONTEXT_CUES = 4;
+const BATCH_CHAR_LIMIT = 1000;
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -254,6 +260,7 @@ function attachSubtitleObserver(container) {
       activeLang = 'auto';
       staleCueCount = 0;
       cuesByLang = new Map();
+      recentCueTexts = [];
       clearOverlay();
       document.documentElement.classList.remove('dualy-active');
       removeWatcher.disconnect();
@@ -279,8 +286,14 @@ function onSubtitleChangeDebounced(container) {
   onSubtitleText(text);
 }
 
+function pushRecentCue(text) {
+  recentCueTexts.push(text);
+  if (recentCueTexts.length > MAX_CONTEXT_CUES) recentCueTexts.shift();
+}
+
 // Shared display path — called from both the DOM observer and the rAF loop.
 function onSubtitleText(text) {
+  if (lastSourceText) pushRecentCue(lastSourceText);
   lastSourceText = text;
 
   sourceEl.textContent = text;
@@ -399,6 +412,7 @@ function showTargetText(text) {
 
 async function translateAndShow(text) {
   const tl = settings.targetLang;
+  const context = recentCueTexts.join(' ') || undefined;
 
   const resp = await chrome.runtime.sendMessage({
     type: 'TRANSLATE',
@@ -406,7 +420,13 @@ async function translateAndShow(text) {
     sl: activeLang,
     tl,
     provider: settings.translationProvider,
+    context,
   });
+
+  if (!resp?.fromCache) {
+    const prov = settings.translationProvider || 'google';
+    if (DEBUG) console.log(`[Dualy] JIT ${prov} ${resp?.ms ?? '?'}ms | in="${text}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
+  }
 
   if (text !== lastSourceText) return;
   if (!resp?.fromCache) schedulePreload();
@@ -524,6 +544,7 @@ function rafUpdateSource(t) {
   }
 
   if (text === lastSourceText) return;
+  if (lastSourceText) pushRecentCue(lastSourceText);
   lastSourceText = text;
 
   if (!text) {
@@ -563,6 +584,7 @@ function stopRafLoop() {
 function onSeeked() {
   if (!ttmlCues) return;
   ttmlCues.forEach(c => { c._preloaded = false; });
+  recentCueTexts = [];
   schedulePreload();
 }
 
@@ -577,20 +599,50 @@ function doPreload() {
   if (!ttmlCues || !settings.enabled) return;
   const video = document.querySelector('video');
   const t = video ? video.currentTime : 0;
-  const upcoming = ttmlCues.filter(c => c.begin >= t && c.begin <= t + 90 && !c._preloaded);
+  const upcoming = ttmlCues.filter(c => c.begin >= t && c.begin <= t + 120 && !c._preloaded);
+  upcoming.forEach(c => { c._preloaded = true; });
+
+  const sl = activeLang;
+  const tl = settings.targetLang;
+  const provider = settings.translationProvider;
+
+  // Group upcoming cues into char-limited batches, keeping cue objects for timing
+  const batches = [];
+  let batch = [], batchLen = 0;
   for (const cue of upcoming) {
-    cue._preloaded = true;
-    // Fire-and-forget — result lands in background.js cache for instant retrieval
-    chrome.runtime.sendMessage({
-      type: 'TRANSLATE',
-      text: cue.text,
-      sl: activeLang,
-      tl: settings.targetLang,
-      provider: settings.translationProvider,
-    });
+    if (batchLen + cue.text.length > BATCH_CHAR_LIMIT && batch.length) {
+      batches.push(batch);
+      batch = [];
+      batchLen = 0;
+    }
+    batch.push(cue);
+    batchLen += cue.text.length;
   }
-  // Slide the window forward every 30 s
-  if (upcoming.length) preloadTimer = setTimeout(doPreload, 30_000);
+  if (batch.length) batches.push(batch);
+
+  for (const batchCues of batches) {
+    const texts = batchCues.map(c => c.text);
+    const batchStart = batchCues[0].begin;
+    const contextTexts = ttmlCues
+      .filter(c => c._preloaded && c.end <= batchStart && c.begin >= batchStart - 30)
+      .slice(-MAX_CONTEXT_CUES)
+      .map(c => c.text);
+
+    if (texts.length === 1) {
+      chrome.runtime.sendMessage({ type: 'TRANSLATE', text: texts[0], sl, tl, provider, preload: true }, resp => {
+        if (!resp?.fromCache)
+          if (DEBUG) console.log(`[Dualy] preload ${provider} ${resp?.ms ?? '?'}ms | in="${texts[0]}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
+      });
+    } else {
+      chrome.runtime.sendMessage({ type: 'TRANSLATE_BATCH', texts, contextTexts, sl, tl, provider }, resp => {
+        if (resp?.allCached) { if (DEBUG) console.log(`[Dualy] preload batch ${provider} all cached (${texts.length}/${texts.length})`); return; }
+        const ok = resp?.results?.filter(Boolean).length ?? 0;
+        if (DEBUG) console.log(`[Dualy] preload batch ${provider} ${resp?.ms ?? '?'}ms | in=${JSON.stringify(texts)} | out=${resp?.results ? JSON.stringify(resp.results) : 'FAIL'} (${ok}/${texts.length} ok)`);
+      });
+    }
+  }
+
+  if (upcoming.length) preloadTimer = setTimeout(doPreload, 60_000);
 }
 
 // ── Subtitle file parsers ─────────────────────────────────────────────────────

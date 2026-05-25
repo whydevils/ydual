@@ -19,7 +19,7 @@ The extension is not on the Chrome Web Store yet. Load it manually:
 
 1. Clone or download this repository.
 2. Open `chrome://extensions` in Chrome and enable **Developer mode**.
-3. Click **Load unpacked** and select the repository folder.
+3. Click **Load unpacked** and select the `src/` folder inside the repository.
 4. Open a supported streaming platform and the extension activates automatically.
 
 ## Usage
@@ -46,19 +46,21 @@ The status dot in the popup turns purple when a supported platform is detected.
 
 ### Architecture
 
-The extension is designed around a platform content script (`content.js`) that is paired with a platform-specific injector (`injector.js`). Adding a new platform means writing a new injector and registering a new `content_scripts` entry in `manifest.json`; the translation pipeline, overlay, and settings are shared and platform-agnostic.
+The extension is designed around a platform content script (`src/content.js`) that is paired with a platform-specific injector (`src/injector.js`). Adding a new platform means writing a new injector and registering a new `content_scripts` entry in `src/manifest.json`; the translation pipeline, overlay, and settings are shared and platform-agnostic.
 
 Currently one platform is implemented: **Netflix**. The following describes that implementation.
 
 The extension consists of three JavaScript contexts and two vendor libraries:
 
 ```
-injector.js     — MAIN world, runs at document_start
-content.js      — isolated world, runs at document_idle
-background.js   — MV3 service worker
-vendor/
-  pinyin-pro.min.js
-  hangul-romanization.js
+src/
+  injector.js          — MAIN world, runs at document_start
+  content.js           — isolated world, runs at document_idle
+  background.js        — MV3 service worker
+  vendor/
+    pinyin-pro.min.js
+    hangul-romanization.js
+build.js               — packages src/ into dist/dualy-{version}.zip and .crx
 ```
 
 ### Subtitle interception (`injector.js`)
