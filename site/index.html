@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Watch Netflix with subtitles in two languages at once. Zero-delay, context-aware translations. Free, no setup required.">
+  <title>Dualy — Dual Subtitles for Netflix</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #18181b;
+      --bg2:    #1c1c1f;
+      --accent: #D946EF;
+      --text:   #e4e4e7;
+      --muted:  #71717a;
+      --dim:    #a1a1aa;
+      --border: #27272a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+
+    header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      background: rgba(24, 24, 27, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wordmark {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--accent);
+    }
+    .wordmark span {
+      color: var(--text);
+      font-weight: 300;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      transition: color 0.15s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* ── Hero ────────────────────────────────────────────────────────────── */
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 80px;
+      text-align: center;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 30%, rgba(217, 70, 239, 0.06) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .hero-wordmark {
+      font-size: clamp(56px, 11vw, 104px);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1;
+      color: var(--accent);
+      margin-bottom: 20px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .hero-wordmark span {
+      color: var(--text);
+      font-weight: 300;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .tagline {
+      font-size: clamp(14px, 2.5vw, 17px);
+      color: var(--dim);
+      letter-spacing: 0.02em;
+      margin-bottom: 52px;
+      animation: fadeUp 0.5s 0.08s ease both;
+    }
+
+    /* ── Subtitle demo ───────────────────────────────────────────────────── */
+
+    .sub-demo {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 44px;
+    }
+
+    .sub-block {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 5px;
+      padding: 5px 22px 7px;
+      text-align: center;
+      animation: fadeUp 0.5s ease both;
+    }
+    .sub-block.source { animation-delay: 0.18s; }
+    .sub-block.target {
+      border-top: 2px solid var(--accent);
+      animation-delay: 0.34s;
+      animation: subIn 0.5s 0.34s ease both;
+    }
+
+    .sub-source-text {
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.88);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+      letter-spacing: 0.04em;
+    }
+    .sub-pinyin {
+      font-size: 14px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      margin-top: 1px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .sub-target-text {
+      font-size: 26px;
+      color: #fff;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    }
+
+    .sub-caption {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 14px;
+      animation: fadeUp 0.5s 0.5s ease both;
+    }
+
+/* ── Features ────────────────────────────────────────────────────────── */
+
+    .features {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px 100px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 28px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .feature {
+      background: var(--bg2);
+      padding: 22px 24px;
+    }
+
+    .feature-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 5px;
+      letter-spacing: 0.01em;
+    }
+    .feature-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: var(--text); }
+    .footer-links { display: flex; gap: 20px; }
+
+    /* ── Animations ──────────────────────────────────────────────────────── */
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes subIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────────── */
+
+    @media (max-width: 540px) {
+      header { padding: 16px 20px; }
+      .hero  { padding: 100px 20px 60px; }
+      .features { padding: 60px 20px 80px; }
+      footer { padding: 20px; }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">DUAL<span>y</span></a>
+  <nav><a href="privacy.html">Privacy</a></nav>
+</header>
+
+<section class="hero">
+  <img src="icon.svg" width="64" height="64" alt="" style="border-radius:14px;margin-bottom:20px;animation:fadeUp 0.5s ease both;">
+  <div class="hero-wordmark">DUAL<span>y</span></div>
+  <p class="tagline">Watch Netflix in two languages at once.</p>
+
+  <div class="sub-demo">
+    <div class="sub-block source">
+      <div class="sub-source-text">我爱你。</div>
+      <div class="sub-pinyin">wǒ ài nǐ.</div>
+    </div>
+    <div class="sub-block target">
+      <div class="sub-target-text">I love you.</div>
+    </div>
+    <p class="sub-caption">Chinese → English · with pinyin</p>
+  </div>
+
+</section>
+
+<section class="features">
+  <p class="section-label">What it does</p>
+  <div class="feature-grid">
+    <div class="feature">
+      <div class="feature-title">Zero delay</div>
+      <div class="feature-desc">Upcoming lines are pre-translated in a 2-minute lookahead window so the translation is ready the instant the subtitle appears.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Context-aware</div>
+      <div class="feature-desc">Lines are batched by scene so pronouns, names, and tone stay consistent across sentences — not translated in isolation.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Google Translate built in</div>
+      <div class="feature-desc">Works out of the box with no account, no API key, and no setup required.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">DeepL support</div>
+      <div class="feature-desc">Pair your DeepL API key for higher-quality translations, especially for European languages.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Phonetics</div>
+      <div class="feature-desc">Optional pinyin for Chinese subtitles and romanisation for Korean, shown beneath each line.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">Fully customisable</div>
+      <div class="feature-desc">Adjust font sizes, vertical position, background colour and opacity from the popup. Toggle the accent colour on phonetics and the subtitle separator.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 whydevils · MIT License</span>
+  <div class="footer-links">
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/whydevils/ydual">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -6,7 +6,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const contentSrc = readFileSync(`${__dir}/content.js`, 'utf8');
+const contentSrc = readFileSync(`${__dir}/../src/content.js`, 'utf8');
 
 // Pull parseTTML, ttmlNodeText, parseTimestamp out of content.js
 const fnSrc = contentSrc.match(

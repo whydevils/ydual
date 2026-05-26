@@ -15,7 +15,7 @@ import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const contentSrc = readFileSync(`${__dir}/content.js`, 'utf8');
+const contentSrc = readFileSync(`${__dir}/../src/content.js`, 'utf8');
 
 // Pull the two functions we want to test out of content.js so we can eval them
 const fnSrc = contentSrc

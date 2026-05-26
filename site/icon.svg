@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background -->
+  <rect width="128" height="128" rx="26" fill="#18181b"/>
+
+  <!-- Source subtitle bar (dim white — shorter, like a foreign-language line) -->
+  <rect x="16" y="40" width="66" height="14" rx="7" fill="rgba(228,228,231,0.7)"/>
+
+  <!-- Separator — mirrors the extension's accent border-top on the target block -->
+  <rect x="16" y="61" width="92" height="3" rx="1.5" fill="#D946EF"/>
+
+  <!-- Translation bar (accent — wider, like the target translation line) -->
+  <rect x="16" y="70" width="86" height="18" rx="9" fill="#D946EF"/>
+</svg>
