@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — Dualy</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #18181b;
+      --bg2:    #1c1c1f;
+      --accent: #D946EF;
+      --text:   #e4e4e7;
+      --muted:  #71717a;
+      --dim:    #a1a1aa;
+      --border: #27272a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      background: rgba(24, 24, 27, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wordmark {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--accent);
+    }
+    .wordmark span {
+      color: var(--text);
+      font-weight: 300;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    nav { display: flex; gap: 20px; }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      transition: color 0.15s;
+    }
+    nav a:hover { color: var(--text); }
+
+    .content {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 120px 24px 100px;
+    }
+
+    .page-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 32px;
+      line-height: 1.2;
+    }
+
+    .contact-options {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .contact-option {
+      background: var(--bg2);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .contact-option-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+
+    .contact-option-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .contact-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--dim);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--border);
+      transition: color 0.15s, text-decoration-color 0.15s;
+    }
+    .contact-link:hover {
+      color: var(--text);
+      text-decoration-color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: var(--text); }
+    .footer-links { display: flex; gap: 20px; }
+
+    @media (max-width: 540px) {
+      header { padding: 16px 20px; }
+      .content { padding: 100px 20px 80px; }
+      footer { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="wordmark" href="index.html">DUAL<span>y</span></a>
+  <nav><a href="index.html">Home</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a></nav>
+</header>
+
+<main class="content">
+  <p class="page-eyebrow">Get in touch</p>
+  <h1>Contact</h1>
+
+  <div class="contact-options">
+    <div class="contact-option">
+      <div class="contact-option-title">Bug reports &amp; feature requests</div>
+      <div class="contact-option-desc">Open an issue on GitHub — it's the best place to track bugs and discuss ideas.</div>
+      <a class="contact-link" href="https://github.com/whydevils/ydual/issues" target="_blank" rel="noopener noreferrer">github.com/whydevils/ydual/issues</a>
+    </div>
+    <div class="contact-option">
+      <div class="contact-option-title">Everything else</div>
+      <div class="contact-option-desc">Send an email for anything not suited to a public issue.</div>
+      <a class="contact-link" href="mailto:contact@whydevils.com">contact@whydevils.com</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>© 2026 whydevils · MIT License</span>
+  <div class="footer-links">
+    <a href="index.html">Home</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/whydevils/ydual">GitHub</a>
+  </div>
+</footer>
+
+</body>
+</html>
