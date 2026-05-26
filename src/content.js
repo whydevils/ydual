@@ -700,6 +700,7 @@ function parseTimestamp(s) {
   if (/^\d+t$/.test(s)) return parseInt(s) / 10_000_000; // TTML ticks
   const parts = s.split(':');
   if (parts.length < 2) return parseFloat(s) || 0;
+  if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1]) || 0; // MM:SS.mmm
   const frames = parts[3] ? parseInt(parts[3]) / 30 : 0; // HH:MM:SS:FF
   return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2] || 0) + frames;
 }

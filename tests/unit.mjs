@@ -6,22 +6,33 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const contentSrc = readFileSync(`${__dir}/../src/content.js`, 'utf8');
 const backgroundSrc = readFileSync(`${__dir}/../src/background.js`, 'utf8');
 
 function extract(src, name) {
-  // Matches 'const NAME = ...\n};' or 'function NAME ...\n}'  at top level
-  const m = src.match(new RegExp(`((?:const ${name}[\\s\\S]+?^};|function ${name}[\\s\\S]+?^}))`, 'm'));
-  if (!m) throw new Error(`Could not extract '${name}' from source`);
-  return m[1];
+  // Single-line const (try first to avoid greedy multi-line match)
+  let m = src.match(new RegExp(`^(const ${name}\\s*=.+;)`, 'm'));
+  if (m) return m[1].replace(/^const /, 'var ');
+  // Multi-line const (object/array ending with ^};)
+  m = src.match(new RegExp(`(const ${name}\\s*=[\\s\\S]+?^};)`, 'm'));
+  if (m) return m[1].replace(/^const /, 'var ');
+  // Function declaration
+  m = src.match(new RegExp(`(function ${name}[\\s\\S]+?^})`, 'm'));
+  if (m) return m[1];
+  throw new Error(`Could not extract '${name}' from source`);
 }
 
-// Load the functions we want to test into this scope
-eval([
+// vm.runInThisContext puts var/function declarations on globalThis,
+// making them accessible in this module. eval() in ESM strict mode
+// cannot do this — declarations stay scoped to the eval block.
+vm.runInThisContext([
   extract(backgroundSrc, 'DEEPL_LANG_MAP'),
   extract(backgroundSrc, 'toDeepLLang'),
+  extract(contentSrc, 'CHINESE_CODES'),
+  extract(contentSrc, 'KOREAN_CODES'),
   extract(contentSrc, 'parseTimestamp'),
   extract(contentSrc, 'isChinese'),
   extract(contentSrc, 'isKorean'),
