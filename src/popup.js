@@ -118,7 +118,6 @@ function updatePinyinAccentVisibility(showPinyin) {
   useAccentColorRow.style.display = showPinyin ? 'flex' : 'none';
 }
 
-// Live value displays
 srcSizeEl.addEventListener('input', () => { srcSizeVal.textContent = `${srcSizeEl.value}px`; });
 tgtSizeEl.addEventListener('input', () => { tgtSizeVal.textContent = `${tgtSizeEl.value}px`; });
 bgAlphaEl.addEventListener('input', () => { bgAlphaVal.textContent = `${bgAlphaEl.value}%`; });
@@ -138,10 +137,7 @@ function onSettingChange() {
 ['sourceFontSize', 'targetFontSize', 'bgAlpha', 'verticalPos']
   .forEach(id => $(id).addEventListener('input', onSettingChange));
 
-// Provider toggle: show/hide key field
 providerEl.addEventListener('change', () => updateDeepLKeyVisibility(providerEl.value));
-
-// Pinyin toggle: show/hide accent color row
 showPinyinEl.addEventListener('change', () => updatePinyinAccentVisibility(showPinyinEl.checked));
 
 const DISPLAY_DEFAULTS = {

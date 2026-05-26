@@ -1,9 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Background circle -->
-  <circle cx="64" cy="64" r="64" fill="#18181b"/>
-  <!-- 译 (translate) in pink, lower-right, drawn first so A sits on top -->
-  <!-- 说 in white, upper-left, drawn first so A sits on top -->
-  <text x="6" y="82" font-family="Noto Sans CJK SC, Noto Serif CJK SC, serif" font-size="78" font-weight="bold" fill="white">说</text>
-  <!-- A in purple, lower-right, on top -->
-  <text x="44" y="116" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="78" fill="#D946EF">A</text>
+  <!-- Background -->
+  <rect width="128" height="128" rx="26" fill="#18181b"/>
+
+  <!-- Source subtitle bar (dim white — shorter, like a foreign-language line) -->
+  <rect x="16" y="40" width="66" height="14" rx="7" fill="rgba(228,228,231,0.7)"/>
+
+  <!-- Separator — mirrors the extension's accent border-top on the target block -->
+  <rect x="16" y="61" width="92" height="3" rx="1.5" fill="#D946EF"/>
+
+  <!-- Translation bar (accent — wider, like the target translation line) -->
+  <rect x="16" y="70" width="86" height="18" rx="9" fill="#D946EF"/>
 </svg>

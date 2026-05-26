@@ -1,17 +1,18 @@
 {
-  "name": "ydual",
-  "version": "1.0.0",
-  "description": "",
+  "name": "dualy",
+  "version": "0.0.2",
+  "description": "Chrome extension for dual subtitles on Netflix — original language + live translation simultaneously.",
+  "author": "whydevils",
+  "license": "MIT",
+  "type": "commonjs",
   "scripts": {
     "build": "node build.js",
+    "debug": "node scripts/debug.js",
     "make-icons": "node src/icons/make_icons.mjs",
     "prepare-assets": "node src/icons/make_icons.mjs && node prepare-assets.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/unit.mjs && node tests/dom.mjs && node tests/ttml.mjs && node tests/injector.mjs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": ["chrome-extension", "subtitles", "netflix", "translation", "language-learning"],
   "dependencies": {
     "playwright": "^1.60.0"
   }

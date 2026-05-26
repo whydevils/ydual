@@ -1,22 +1,24 @@
 /**
- * Dualy debug — launches Chrome with extension + your real Netflix login.
+ * Dualy debug — launches Chrome with the extension loaded into your real Netflix login.
  * Navigate to a Netflix title and enable subtitles.
- * This script prints every subtitle-related network request and DOM state.
+ * Prints every subtitle-related network request and DOM state to the terminal.
+ *
+ * Usage: node scripts/debug.js
+ * Requirements: npm install (playwright), then npx playwright install chrome
  */
 const { chromium } = require('playwright');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-const EXT = path.resolve(__dirname);
-// Copy user profile to a temp dir (avoids conflicts if Chrome is running)
+const EXT = path.resolve(__dirname, '..', 'src');
 const PROFILE = path.join(os.tmpdir(), 'dualy-debug-profile');
 
 if (!fs.existsSync(PROFILE)) {
   fs.mkdirSync(PROFILE, { recursive: true });
 }
 
-const SUB_HINTS = ['timedtext','timed_text','subtitle','caption','.ttml','.dfxp','.xml','.vtt','nflximg','nflxvideo','nflxext'];
+const SUB_HINTS = ['timedtext', 'timed_text', 'subtitle', 'caption', '.ttml', '.dfxp', '.xml', '.vtt', 'nflximg', 'nflxvideo', 'nflxext'];
 
 function looksLikeSub(url) {
   const l = url.toLowerCase();
@@ -41,7 +43,6 @@ function looksLikeSub(url) {
 
   const page = await ctx.newPage();
 
-  // ── Log all requests ──────────────────────────────────────────────────────
   const seen = new Set();
   ctx.on('request', req => {
     const url = req.url();
@@ -63,7 +64,6 @@ function looksLikeSub(url) {
     } catch {}
   });
 
-  // ── Page console (content script logs) ───────────────────────────────────
   page.on('console', msg => {
     const t = msg.text();
     if (t.includes('[Dualy') || t.includes('__dualy')) {
@@ -73,7 +73,6 @@ function looksLikeSub(url) {
 
   page.on('pageerror', e => console.log('  [PAGE ERROR]', e.message));
 
-  // ── DOM poller: checks overlay + native subs every 4s ────────────────────
   await page.goto('https://www.netflix.com');
 
   const poll = setInterval(async () => {

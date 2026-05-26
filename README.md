@@ -16,9 +16,9 @@ Watch streaming video with two subtitle tracks at once: the original language on
 
 ## Installation
 
-The extension is not on the Chrome Web Store yet. Load it manually:
+Install from the [Chrome Web Store](#) *(link coming soon)*, or load it manually for development:
 
-1. Clone or download this repository.
+1. Clone this repository.
 2. Open `chrome://extensions` in Chrome and enable **Developer mode**.
 3. Click **Load unpacked** and select the `src/` folder inside the repository.
 4. Open a supported streaming platform and the extension activates automatically.
@@ -62,6 +62,8 @@ src/
     pinyin-pro.min.js
     hangul-romanization.js
 build.js               — packages src/ into dist/dualy-{version}.zip and .crx
+scripts/
+  debug.js             — launches Chrome with extension + your real Netflix login
 ```
 
 ### Subtitle interception (`injector.js`)

@@ -1,7 +1,8 @@
 // Dualy content script — dual subtitle overlay for Netflix
 
-const DEBUG = true;
+const DEBUG = false;
 const ts = () => new Date().toISOString().slice(11, 23);
+
 const ACCENT = '#D946EF';
 const CHINESE_CODES = ['zh', 'zh-cn', 'zh-tw', 'zh-hans', 'zh-hant'];
 const KOREAN_CODES  = ['ko', 'ko-kr'];
@@ -634,14 +635,15 @@ function doPreload() {
 
     if (texts.length === 1) {
       chrome.runtime.sendMessage({ type: 'TRANSLATE', text: texts[0], sl, tl, provider, preload: true }, resp => {
-        if (!resp?.fromCache)
-          if (DEBUG) console.log(`[Dualy] ${ts()} preload ${provider} ${resp?.ms ?? '?'}ms | in="${texts[0]}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
+        if (DEBUG && !resp?.fromCache) console.log(`[Dualy] ${ts()} preload ${provider} ${resp?.ms ?? '?'}ms | in="${texts[0]}" | out=${resp?.text ? `"${resp.text}"` : 'FAIL'}`);
       });
     } else {
       chrome.runtime.sendMessage({ type: 'TRANSLATE_BATCH', texts, contextTexts, sl, tl, provider }, resp => {
-        if (resp?.allCached) { if (DEBUG) console.log(`[Dualy] ${ts()} preload batch ${provider} all cached (${texts.length}/${texts.length})`); return; }
-        const ok = resp?.results?.filter(Boolean).length ?? 0;
-        if (DEBUG) console.log(`[Dualy] ${ts()} preload batch ${provider} ${resp?.ms ?? '?'}ms | in=${JSON.stringify(texts)} | out=${resp?.results ? JSON.stringify(resp.results) : 'FAIL'} (${ok}/${texts.length} ok)`);
+        if (DEBUG) {
+          if (resp?.allCached) { console.log(`[Dualy] ${ts()} preload batch ${provider} all cached (${texts.length}/${texts.length})`); return; }
+          const ok = resp?.results?.filter(Boolean).length ?? 0;
+          console.log(`[Dualy] ${ts()} preload batch ${provider} ${resp?.ms ?? '?'}ms | in=${JSON.stringify(texts)} | out=${resp?.results ? JSON.stringify(resp.results) : 'FAIL'} (${ok}/${texts.length} ok)`);
+        }
       });
     }
   }

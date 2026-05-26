@@ -180,6 +180,7 @@ chrome.runtime.onInstalled.addListener(pruneCache);
 
 async function pruneCache() {
   const all = await new Promise(r => chrome.storage.local.get(null, r));
+  // Cache keys have the form provider|sl|tl|text; settings keys (e.g. deeplApiKey) never contain '|'
   const keys = Object.keys(all).filter(k => k.includes('|'));
   if (keys.length > 500) chrome.storage.local.remove(keys.slice(0, keys.length - 400));
 }
