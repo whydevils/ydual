@@ -60,6 +60,7 @@ function loadSettings() {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') return;
+  const prevEnabled = settings.enabled;
   const prevTarget = settings.targetLang;
   const prevProvider = settings.translationProvider;
   for (const [key, { newValue }] of Object.entries(changes)) {
@@ -71,6 +72,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
     showNative(true);
   } else {
     showNative(false);
+    if (!prevEnabled) {
+      // Transitioning inactive → active: the MutationObserver won't re-fire for a
+      // static subtitle (mid-cue or paused), so manually recover current state.
+      if (ttmlCues) {
+        schedulePreload();
+      } else {
+        const container = getSubtitleContainer();
+        if (container) {
+          const text = extractText(container);
+          if (text) onSubtitleText(text);
+        }
+      }
+    }
     if (settings.targetLang !== prevTarget || settings.translationProvider !== prevProvider) {
       targetEl.textContent = '';
       pinyinTgtEl.style.display = 'none';
