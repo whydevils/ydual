@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dualy",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Watch Netflix with subtitles in two languages at once.",
   "icons": {
     "16": "icons/icon16.png",
@@ -21,13 +21,13 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.netflix.com/watch/*"],
+      "matches": ["https://www.netflix.com/*"],
       "js": ["injector.js"],
       "world": "MAIN",
       "run_at": "document_start"
     },
     {
-      "matches": ["https://www.netflix.com/watch/*"],
+      "matches": ["https://www.netflix.com/*"],
       "js": ["vendor/pinyin-pro.min.js", "vendor/hangul-romanization.js", "content.js"],
       "run_at": "document_idle"
     }
